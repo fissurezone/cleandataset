@@ -59,7 +59,7 @@ featureNames <- gsub("BodyBody", "Body", featureNames)
 read_data <- function(type) {
   # read measurement subjects
   subjects <- read.table(file.path(datadir, type, sprintf("subject_%s.txt", type)))
-  colnames(subjects) <- c("subjectId")
+  colnames(subjects) <- c("subject")
   
   # read measurement activities
   activity <- read.table(file.path(datadir, type, sprintf("y_%s.txt", type)))
@@ -82,26 +82,25 @@ read_data <- function(type) {
 # read and merge all subjects into one dataframe
 data <- bind_rows(read_data("train"), read_data("test"))
 
-# convert subjectId to factor
-data$subjectId <- factor(data$subjectId)
-
 # pick out just the mean and standard deviation values
 measurements <- featureNames[grepl("(mean|std)\\(\\)", featureNames)]
-data <- data[, names(data) %in% c("subjectId", "activity", measurements)]
+data <- data[, names(data) %in% c("subject", "activity", measurements)]
 
 # clean up measurement names
-colnames(data) <- gsub("^f", "Frequency Domain ", colnames(data))
-colnames(data) <- gsub("^t", "Time Domain ", colnames(data))
-colnames(data) <- gsub("Acc", " Accelerometer", colnames(data))
-colnames(data) <- gsub("Gyro", " Gyroscope", colnames(data))
-colnames(data) <- gsub("Mag", " Magnitude", colnames(data))
-colnames(data) <- gsub("([XYZ])$", " \\1 Axis", colnames(data))
-colnames(data) <- gsub("mean(.+)", "\\1 Mean", colnames(data))
-colnames(data) <- gsub("std(.+)", "\\1 Standard Deviation", colnames(data))
+colnames(data) <- gsub("^f", "Frequency.Domain.", colnames(data))
+colnames(data) <- gsub("^t", "Time.Domain.", colnames(data))
+colnames(data) <- gsub("Acc", ".Accelerometer", colnames(data))
+colnames(data) <- gsub("Gyro", ".Gyroscope", colnames(data))
+colnames(data) <- gsub("Mag", ".Magnitude", colnames(data))
+colnames(data) <- gsub("([XYZ])$", ".\\1.Axis", colnames(data))
+colnames(data) <- gsub("mean(.+)", "\\1.Mean", colnames(data))
+colnames(data) <- gsub("std(.+)", "\\1.Standard Deviation", colnames(data))
 colnames(data) <- gsub("[\\(\\)-]", "", colnames(data))
 
 # group by subject and activity and summarise using mean
-tidyData <- data %>% group_by(subjectId, activity) %>% summarise_all(funs(mean))
+tidyData <- data %>% group_by(subject, activity) %>% summarise_all(funs(mean))
+colnames(tidyData) <- c("subject", "activity",
+                        gsub("^", "Average.", colnames(tidyData)[-c(1,2)]))
 
 # write to "tidy_data.txt"
-write.table(tidyData, "tidy_data.txt", row.names = FALSE, quote = FALSE)
+write.table(tidyData, "tidy_data.txt")
